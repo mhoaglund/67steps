@@ -13,7 +13,7 @@ html,body {
 }
 
 h1{
-    font-size: 2rem;
+    font-size: 3rem;
     font-family: ATRreg;
     color: White;
     text-align: center;
@@ -57,9 +57,22 @@ textarea {
     resize: vertical;
 }
 
-#visbody{
+#visbody, #visoverlay{
+    position: absolute;
+    top: 0px;
+    left:0px;
     height:100%;
     width: 100%;
+}
+
+.subdivider{
+    position: absolute;
+    width: 25%;
+    height: 100%;
+    bottom: 0px;
+    float: left;
+    background-color: #252;
+    z-index: 9999;
 }
 
 /*Helpers*/

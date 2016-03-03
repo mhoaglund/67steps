@@ -19,14 +19,11 @@ function splitUp(arr, n) {
             restUsed--; // we've used one division element now
             add = true;
         }
-
         result.push(arr.slice(i, end)); // part of the array
-
         if(add) {
             i++; // also increment i in the case we added an extra element for division
         }
     }
-
     return result;
 }
 //end helpers
@@ -48,9 +45,11 @@ var edges = new vis.DataSet([
 ]);
 
 var container = document.getElementById('visbody');
+var overlaycontainer = document.getElementById('visoverlay');
 var CurrentLayer = 1;
 var CurrentIndexStop = 2;
 var BroadestLayer = 6;
+var network = null;
 
 function Init(){
     container = document.getElementById('visbody');
@@ -59,21 +58,72 @@ function Init(){
     CurrentLayer = 1;
     CurrentIndexStop = 2;
     BroadestLayer = 6;
-    nodes = new vis.DataSet([
-        {id: 1, label: '', fixed: {x:true,y:true}},
-        {id: 2, label: '', fixed: {x:true,y:true}}
-    ]);
-    layers = [
-        {layer:0, indices:[1]},
-        {layer:1, indices:[2]}
-    ];
-    edges = new vis.DataSet([
-        {from: 1, to: 2, width: 4}
-    ]);
+    // nodes = new vis.DataSet([
+    //     {id: 1, label: '', fixed: {x:true,y:true}},
+    //     {id: 2, label: '', fixed: {x:true,y:true}}
+    // ]);
+    // layers = [
+    //     {layer:0, indices:[1]},
+    //     {layer:1, indices:[2]}
+    // ];
+    // edges = new vis.DataSet([
+    //     {from: 1, to: 2, width: 4}
+    // ]);
+    if(network) network.destroy();
+    network = new vis.Network(container, data, options);
+    addDummyEdge(1);
+    calibrateOverlay();
+    network.on("startStabilizing", function (params) {
+        var options = {
+        position: {x:0,y:0},
+        scale: 0.5,
+        locked: true,
+        offset: {x:20,y:250},
+        animation: false
+      };
+      network.focus(2, options);
+    });
+}
+
+var ystep = 150; //this is basically ~ layout.levelSeparation
+var xstep = 100;//this is basically ~ layout.nodeSpacing
+//x=0 is the vertical center of the canvas
+//y=0 is the vertical bottom of the canvas
+var homex = 0;
+var homey = 0;
+var scrheight = $(window).height();
+var scrwidth = $(window).width();
+var overlaydivisions = 4;
+var shouldCalibrateOverlay = true;
+
+function calibrateOverlay(){
+    if(network == null || !shouldCalibrateOverlay) return;
+    var pos = network.getPositions([1,2]);
+    
+    homex = pos[1].x;
+    homey = pos[1].y;
+    var dompos = network.canvasToDOM({x: homex, y:homey});
+    for(var i = 0; i< overlaydivisions; i++){
+        var $subdiv = $( "<div class='subdivider'/>" );
+        var myid = i + 'sd';
+        var myleft = (25 * i).toString() + '%';
+        var mybtm = (scrheight - dompos.y) + 'px';
+        $subdiv.attr('id', myid);
+        $subdiv.css('left', myleft);
+        $subdiv.css('bottom', mybtm);
+        $('#visoverlay').append($subdiv);
+    }
+    
+    shouldCalibrateOverlay = false;
+}
+
+function shiftOverlay(){
+    
 }
 
 function addTreeLayer(){
     var newNodeIndices = [];
+    calibrateOverlay();
     if(CurrentLayer == 1){
         addDummyEdges((BroadestLayer * 2), 1);
         nodes.add({id: 3, label: ''});
@@ -89,29 +139,32 @@ function addTreeLayer(){
         addDummyEdges(BroadestLayer, 1);
         addDummyEdges(BroadestLayer, 2);
         }
+        //TODO: put this on a serialized timeout so we're adding one limb at a time and slowing the whole effect down
         for (i = 1; i <= BroadestLayer; i++) { 
             var myId = CurrentIndexStop+i;
             nodes.add({id: myId, label: ''});
             newNodeIndices.push(myId);
         }
     }
+    if(CurrentLayer > 2){
+        $('.subdivider').animate({
+             bottom: '+=75' }, 1000);
+    }
     CurrentIndexStop = getMaxOfArray(newNodeIndices);
     layers.push({layer: CurrentLayer + 1, indices: newNodeIndices});
     establishEdges(newNodeIndices);
-    lockLastLayer();
-    // reconcileSorting();
     CurrentLayer++;
 }
 
 function establishEdges(newNodes){
-    //var splitFactor = (CurrentLayer > 1) ? CurrentLayer/2 : CurrentLayer;
+
     var linkTo;
     var currWidth = 1;
+    if(CurrentLayer == 1 || CurrentLayer == 2) currWidth = 2;
     if(CurrentLayer == 1){
         linkTo = layers.filter(function(obj){
             return obj.layer === CurrentLayer;
         })[0];
-        currWidth = 2;
     }else{
         linkTo = layers.filter(function(obj){
             return obj.layer === CurrentLayer-1;
@@ -125,49 +178,22 @@ function establishEdges(newNodes){
         edges.add({from: newNodes[i], to: linkTarget, width: currWidth});
     }
 }
-
-function lockLastLayer(){
-    
-}
-//TODO: flesh this out so when layers are added, 'weight' is added to existing layers to preserve sorting heirarchy
-// function reconcileSorting(){
-//     for(var thislayer in layers){
-//         if(thislayer.layer < CurrentLayer){
-//             thislayer.indices.forEach(
-//                 //addDummyEdge(value);
-                
-//             );
-//         }
-//     }
-// }
-
-function addNode() {
-    var newId = i;
-    nodes.add({id:newId, label:""});
-    edges.add({from: newId, to: j});
-    i++;
-    j++;
-}
     
 function addDummyEdge(target) {
     var d = ({
     from: target, 
     to: target, 
-    width: 0, 
-    color: '#222',
-    shadow:{enabled: false}
+    hidden: true
     });
     edges.add(d);
 }
 
 function addDummyEdges(amount, target) {
-    for(i = 0; i<amount; i++){
+    for(var i = 0; i<amount; i++){
         var d = ({
             from: target, 
             to: target, 
-            width: 0, 
-            color: '#222',
-            shadow:{enabled: false}
+            hidden: true
         });
         edges.add(d);
     }
@@ -265,43 +291,31 @@ var options = {
     physics:{
         enabled: true,
         barnesHut: {
-            gravitationalConstant: -2000,
-            centralGravity: 0.3,
+            gravitationalConstant: -18000,
+            centralGravity: 1.25,
             springLength: 95,
-            springConstant: 0.04,
-            damping: 0.09,
-            avoidOverlap: 0
+            springConstant: 0.05,
+            damping: 0.29,
+            avoidOverlap: 0.03
         },
-        hierarchicalRepulsion: {
-            centralGravity: 0.0,
-            springLength: 100,
-            springConstant: 0.01,
-            nodeDistance: 120,
-            damping: 0.09
-        },
-        maxVelocity: 50,
+        maxVelocity: 30,
         minVelocity: 0.1,
         solver: 'barnesHut',
         stabilization: {
         enabled: true,
-        iterations: 1000,
+        iterations: 40,
         updateInterval: 100,
         onlyDynamicEdges: false,
-        fit: true
+        fit: false
         },
-        timestep: 0.9,
+        timestep: 0.5,
         adaptiveTimestep: true
     }
 }
 
-var network = new vis.Network(container, data, options);
-addDummyEdge(1);
-addDummyEdge(1);
-network.on("stabilized", function (params) {
-    //lock down the bottom of the tree; all nodes except the last set that popped into existance
-});
-  
-var intervalID = window.setInterval(myCallback, 4500);
+Init();
+
+var intervalID = window.setInterval(myCallback, 2800);
 
 function myCallback() {
   addTreeLayer();
