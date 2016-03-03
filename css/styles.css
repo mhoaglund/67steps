@@ -7,6 +7,17 @@ html,body {
     width: 100%;
 }
 
+@font-face {
+    font-family: ATRreg;
+    src: url('American Typewriter Regular.ttf');
+}
+
+h1{
+    font-family: ATRreg;
+    color: White;
+    text-align: center;
+}
+
 ::-moz-selection {
     background: #b3d4fc;
     text-shadow: none;
