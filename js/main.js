@@ -26,6 +26,9 @@ function splitUp(arr, n) {
     }
     return result;
 }
+
+function isOdd(num) { return num % 2;}
+
 //end helpers
 
 var nodes = new vis.DataSet([
@@ -72,7 +75,6 @@ function Init(){
     if(network) network.destroy();
     network = new vis.Network(container, data, options);
     addDummyEdge(1);
-    calibrateOverlay();
     network.on("startStabilizing", function (params) {
         var options = {
         position: {x:0,y:0},
@@ -82,6 +84,8 @@ function Init(){
         animation: false
       };
       network.focus(2, options);
+      calibrateOverlay();
+      shiftOverlay();
     });
 }
 
@@ -93,32 +97,38 @@ var homex = 0;
 var homey = 0;
 var scrheight = $(window).height();
 var scrwidth = $(window).width();
-var overlaydivisions = 4;
+var overlaydivisions = 18;
+var overlayWidths = 100 / overlaydivisions;
 var shouldCalibrateOverlay = true;
 
 function calibrateOverlay(){
     if(network == null || !shouldCalibrateOverlay) return;
     var pos = network.getPositions([1,2]);
     
-    homex = pos[1].x;
-    homey = pos[1].y;
+    homex = pos[2].x;
+    homey = pos[2].y;
     var dompos = network.canvasToDOM({x: homex, y:homey});
     for(var i = 0; i< overlaydivisions; i++){
         var $subdiv = $( "<div class='subdivider'/>" );
         var myid = i + 'sd';
-        var myleft = (25 * i).toString() + '%';
-        var mybtm = (scrheight - dompos.y) + 'px';
+        var myleft = (overlayWidths * i).toString() + '%';
+        var mybtm = 230 + 'px';
+        var mywdth = overlayWidths + '%';
         $subdiv.attr('id', myid);
         $subdiv.css('left', myleft);
         $subdiv.css('bottom', mybtm);
+        $subdiv.css('width', mywdth);
         $('#visoverlay').append($subdiv);
     }
-    
     shouldCalibrateOverlay = false;
 }
 
 function shiftOverlay(){
-    
+    $('.subdivider').each(function(){
+        var delay = 2800 * Math.random();
+        $(this).animate({
+            bottom: '+=75' }, delay);
+    });
 }
 
 function addTreeLayer(){
@@ -139,17 +149,13 @@ function addTreeLayer(){
         addDummyEdges(BroadestLayer, 1);
         addDummyEdges(BroadestLayer, 2);
         }
-        //TODO: put this on a serialized timeout so we're adding one limb at a time and slowing the whole effect down
         for (i = 1; i <= BroadestLayer; i++) { 
             var myId = CurrentIndexStop+i;
             nodes.add({id: myId, label: ''});
             newNodeIndices.push(myId);
         }
     }
-    if(CurrentLayer > 2){
-        $('.subdivider').animate({
-             bottom: '+=75' }, 1000);
-    }
+    
     CurrentIndexStop = getMaxOfArray(newNodeIndices);
     layers.push({layer: CurrentLayer + 1, indices: newNodeIndices});
     establishEdges(newNodeIndices);
@@ -157,7 +163,6 @@ function addTreeLayer(){
 }
 
 function establishEdges(newNodes){
-
     var linkTo;
     var currWidth = 1;
     if(CurrentLayer == 1 || CurrentLayer == 2) currWidth = 2;
@@ -170,9 +175,7 @@ function establishEdges(newNodes){
             return obj.layer === CurrentLayer-1;
         })[0];
     }
-    
     if(linkTo == null) return;
-
     for (var i = 0; i < newNodes.length; i++) {
         var linkTarget = linkTo.indices[Math.floor(Math.random()*linkTo.indices.length)];
         edges.add({from: newNodes[i], to: linkTarget, width: currWidth});
@@ -199,7 +202,6 @@ function addDummyEdges(amount, target) {
     }
 }
 
-// provide the data in the vis format
 var data = {
     nodes: nodes,
     edges: edges
@@ -314,9 +316,11 @@ var options = {
 }
 
 Init();
-
-var intervalID = window.setInterval(myCallback, 2800);
-
+var totalLayers = 10;
+var intervalID = window.setInterval(shiftOverlay, 2800);
+myCallback();
 function myCallback() {
-  addTreeLayer();
+    for(var i = 0; i<totalLayers; i++){
+        addTreeLayer();
+    }
 }

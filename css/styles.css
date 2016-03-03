@@ -17,6 +17,8 @@ h1{
     font-family: ATRreg;
     color: White;
     text-align: center;
+    -webkit-margin-before: 0px;
+    -webkit-margin-after: 0px;
 }
 
 ::-moz-selection {
@@ -71,8 +73,15 @@ textarea {
     height: 100%;
     bottom: 0px;
     float: left;
-    background-color: #252;
-    z-index: 9999;
+    background-color: #222;
+    z-index: 9;
+}
+
+.txtoverlay{
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    z-index: 10;
 }
 
 /*Helpers*/
