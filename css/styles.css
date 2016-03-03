@@ -19,6 +19,19 @@ h1{
     text-align: center;
     -webkit-margin-before: 0px;
     -webkit-margin-after: 0px;
+    padding: 42px;
+}
+
+.whitetxt{
+    color: White;
+}
+
+.marquee{
+    position: relative;
+    z-index: 90;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 ::-moz-selection {

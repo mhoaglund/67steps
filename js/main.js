@@ -54,41 +54,6 @@ var CurrentIndexStop = 2;
 var BroadestLayer = 6;
 var network = null;
 
-function Init(){
-    container = document.getElementById('visbody');
-    i = 6;
-    j = 5;
-    CurrentLayer = 1;
-    CurrentIndexStop = 2;
-    BroadestLayer = 6;
-    // nodes = new vis.DataSet([
-    //     {id: 1, label: '', fixed: {x:true,y:true}},
-    //     {id: 2, label: '', fixed: {x:true,y:true}}
-    // ]);
-    // layers = [
-    //     {layer:0, indices:[1]},
-    //     {layer:1, indices:[2]}
-    // ];
-    // edges = new vis.DataSet([
-    //     {from: 1, to: 2, width: 4}
-    // ]);
-    if(network) network.destroy();
-    network = new vis.Network(container, data, options);
-    addDummyEdge(1);
-    network.on("startStabilizing", function (params) {
-        var options = {
-        position: {x:0,y:0},
-        scale: 0.5,
-        locked: true,
-        offset: {x:20,y:250},
-        animation: false
-      };
-      network.focus(2, options);
-      calibrateOverlay();
-      shiftOverlay();
-    });
-}
-
 var ystep = 150; //this is basically ~ layout.levelSeparation
 var xstep = 100;//this is basically ~ layout.nodeSpacing
 //x=0 is the vertical center of the canvas
@@ -100,6 +65,7 @@ var scrwidth = $(window).width();
 var overlaydivisions = 18;
 var overlayWidths = 100 / overlaydivisions;
 var shouldCalibrateOverlay = true;
+var steptime = 1000;
 
 function calibrateOverlay(){
     if(network == null || !shouldCalibrateOverlay) return;
@@ -112,7 +78,7 @@ function calibrateOverlay(){
         var $subdiv = $( "<div class='subdivider'/>" );
         var myid = i + 'sd';
         var myleft = (overlayWidths * i).toString() + '%';
-        var mybtm = 230 + 'px';
+        var mybtm = 155 + 'px';
         var mywdth = overlayWidths + '%';
         $subdiv.attr('id', myid);
         $subdiv.css('left', myleft);
@@ -123,12 +89,38 @@ function calibrateOverlay(){
     shouldCalibrateOverlay = false;
 }
 
+var overlaystep = 0;
+var direction = true;
 function shiftOverlay(){
-    $('.subdivider').each(function(){
-        var delay = 2800 * Math.random();
-        $(this).animate({
-            bottom: '+=75' }, delay);
-    });
+    
+    if(overlaystep == 0){
+        treeMake();
+        direction = true;
+        $('.subdivider').each(function(){
+            $(this).css({
+                bottom: '155px' }
+            );
+        });
+    }
+    if(overlaystep == 10){
+        direction = false;
+    }
+    if(direction){
+        $('.subdivider').each(function(){
+            var delay = steptime * Math.random();
+            $(this).animate({
+                bottom: '+=75' }, delay);
+        });
+        overlaystep++;
+    }
+    else{
+         $('.subdivider').each(function(){
+            var delay = steptime * Math.random();
+            $(this).animate({
+                bottom: '-=75' }, delay);
+        });
+        overlaystep--;
+    }
 }
 
 function addTreeLayer(){
@@ -315,11 +307,53 @@ var options = {
     }
 }
 
-Init();
+function Init(){
+    container = document.getElementById('visbody');
+    i = 6;
+    j = 5;
+    CurrentLayer = 1;
+    CurrentIndexStop = 2;
+    BroadestLayer = 6;
+    nodes = new vis.DataSet([
+        {id: 1, label: '', fixed: {x:true,y:true}},
+        {id: 2, label: '', fixed: {x:true,y:true}}
+    ]);
+    layers = [
+        {layer:0, indices:[1]},
+        {layer:1, indices:[2]}
+    ];
+    edges = new vis.DataSet([
+        {from: 1, to: 2, width: 4}
+    ]);
+    data = {
+        nodes: nodes,
+        edges: edges
+    };
+    if(!network) network = new vis.Network(container, data, options);
+    else{
+        network.setData(data);
+    }
+    addDummyEdge(1);
+    network.on("startStabilizing", function (params) {
+        var options = {
+        position: {x:0,y:0},
+        scale: 0.5,
+        locked: true,
+        offset: {x:20,y:250},
+        animation: false
+      };
+      network.focus(2, options);
+      calibrateOverlay();
+    });
+}
+
+
 var totalLayers = 10;
-var intervalID = window.setInterval(shiftOverlay, 2800);
-myCallback();
-function myCallback() {
+
+treeMake();
+var intervalID = window.setInterval(shiftOverlay, steptime);
+function treeMake() {
+    Init();
     for(var i = 0; i<totalLayers; i++){
         addTreeLayer();
     }
