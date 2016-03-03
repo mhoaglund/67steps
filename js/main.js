@@ -58,8 +58,7 @@ var ystep = 150; //this is basically ~ layout.levelSeparation
 var xstep = 100;//this is basically ~ layout.nodeSpacing
 //x=0 is the vertical center of the canvas
 //y=0 is the vertical bottom of the canvas
-var homex = 0;
-var homey = 0;
+
 var scrheight = $(window).height();
 var scrwidth = $(window).width();
 var overlaydivisions = 18;
@@ -70,10 +69,7 @@ var steptime = 1000;
 function calibrateOverlay(){
     if(network == null || !shouldCalibrateOverlay) return;
     var pos = network.getPositions([1,2]);
-    
-    homex = pos[2].x;
-    homey = pos[2].y;
-    var dompos = network.canvasToDOM({x: homex, y:homey});
+
     for(var i = 0; i< overlaydivisions; i++){
         var $subdiv = $( "<div class='subdivider'/>" );
         var myid = i + 'sd';
@@ -91,15 +87,20 @@ function calibrateOverlay(){
 
 var overlaystep = 0;
 var direction = true;
+var mqhidden = false;
 function shiftOverlay(){
-    
     if(overlaystep == 0){
-        treeMake();
+        clearInterval(intervalID);
+        intervalID = null;
         direction = true;
         $('.subdivider').each(function(){
             $(this).css({
                 bottom: '155px' }
             );
+        });
+        $('.marqueeoverlay').fadeTo((steptime/2), 1.0, function(){
+            mqhidden = true;
+            treeMake();
         });
     }
     if(overlaystep == 10){
@@ -112,6 +113,11 @@ function shiftOverlay(){
                 bottom: '+=75' }, delay);
         });
         overlaystep++;
+        if(overlaystep == 2){
+            $('.marqueeoverlay').fadeTo((steptime/2), 0.0, function(){
+                mqhidden = false;
+            });
+        }
     }
     else{
          $('.subdivider').each(function(){
@@ -345,16 +351,18 @@ function Init(){
       network.focus(2, options);
       calibrateOverlay();
     });
+    
 }
-
 
 var totalLayers = 10;
 
-treeMake();
 var intervalID = window.setInterval(shiftOverlay, steptime);
 function treeMake() {
     Init();
     for(var i = 0; i<totalLayers; i++){
         addTreeLayer();
+        if(i == 9){
+            intervalID = window.setInterval(shiftOverlay, steptime);
+        }
     }
 }
