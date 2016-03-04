@@ -56,15 +56,13 @@ var network = null;
 
 var ystep = 150; //this is basically ~ layout.levelSeparation
 var xstep = 100;//this is basically ~ layout.nodeSpacing
-//x=0 is the vertical center of the canvas
-//y=0 is the vertical bottom of the canvas
 
 var scrheight = $(window).height();
 var scrwidth = $(window).width();
 var overlaydivisions = 18;
 var overlayWidths = 100 / overlaydivisions;
 var shouldCalibrateOverlay = true;
-var steptime = 1000;
+var steptime = 2800;
 
 function calibrateOverlay(){
     if(network == null || !shouldCalibrateOverlay) return;
@@ -354,7 +352,7 @@ function Init(){
     
 }
 
-var totalLayers = 10;
+var totalLayers = 12;
 
 var intervalID = window.setInterval(shiftOverlay, steptime);
 function treeMake() {
